@@ -142,6 +142,7 @@ app.get('/team/:teamid', (req, res) => {
 		}
 		res.render('teamoverview', {
 			title: teamsystems.teamname + " Systems",
+			teamname: teamsystems.teamname,
 			teamid: teamsystems.teamid,
 			systems: systemList,
 			members: memberList,
