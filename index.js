@@ -70,6 +70,21 @@ app.use(function(req, res, next) {
   next();
 });
 
+const levels = [
+	{
+		"label": "In Depth Understanding",
+		"relationship": "knowsAbout",
+	},
+	{
+		"label": "Aware of how it works",
+		"relationship": "awareOf",
+	},
+	{
+		"label": "Not looked at it",
+		"relationship": "notLookedAt",
+	}
+];
+
 /**
  * Gets a list of systems from the CMDB and renders them
  */
@@ -93,15 +108,69 @@ app.get('/team/:teamid', (req, res) => {
 });
 
 app.get('/team/:teamid/form', (req, res) => {
-	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
+	var fetches = [];
+	fetches.push(getTeamSystems(res.locals, req.params.teamid));
+	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
+	levels.forEach(level => {
+		fetches.push(
+			cmdb._fetch(res.locals, `/relationships/contact/${contactid}/${level.relationship}`, 'GET').catch((error) => {
+				
+				// Sometimes CMDB returns a 404 when it means empty list.
+				if (error.message == "Received 404 response from CMDB") return [];
+				throw error;
+			})
+		);
+	});
+	Promise.all(fetches).then(results => {
+		var teamsystems = results.shift();
+		var levelprefs = {};
+		results.forEach(resultset => {
+			resultset.forEach(levelpref => {
+				if (levelpref.objectType != "system") return;
+				levelprefs[levelpref.objectID] = levelpref.relationshipType;
+			});
+		});
+		var systems = teamsystems.systems;
+		systems.forEach(system => {
+			system.levels = [];
+			levels.forEach(level => {
+				system.levels.push({
+					label: level.label,
+					relationship: level.relationship,
+					selected: (levelprefs[system.dataItemID] == level.relationship),
+				});
+			});
+		});
 		res.render('form', {
-			title: teamsystems.teamname + " Systems | Update Form"
+			title: teamsystems.teamname + " Systems | Update Form",
+			teamid: teamsystems.teamid,
+			systems: systems,
 		});
 	}).catch(error => {
 		res.status(502);
-		res.render("error", {message: "Unable to read team from CMDB ("+error+")"});
+		res.render("error", {message: "Unable to read form details ("+error+")"});
 	});
 
+});
+
+app.post('/team/:teamid/form', (req, res) => {
+	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
+	getTeam(res.locals, req.params.teamid).then(teamdata => {
+		var fetches = []
+		teamdata.isSecondaryContactfor.system.forEach(system => {
+			levels.forEach(level => {
+
+				// If the user has selected this option, add it to CMDB
+				// Otherwise delete it from CMDB
+				var method = (req.body[system.dataItemID] == level.relationship) ? "PUT" : "DELETE";
+				var path = `/relationships/contact/${contactid}/${level.relationship}/system/${system.dataItemID}`;
+				fetches.push(cmdb._fetch(res.locals, path, method));
+			});
+		});
+		return fetches;
+	}).then(() => {
+		res.redirect(303, req.path);
+	});
 });
 
 app.use((req, res) => {

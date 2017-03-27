@@ -5,5 +5,19 @@ body {
 }
 
 #content {
-	padding: 20px 0;
+	padding: 1em;
+	background-color:#fff1e0;
+}
+#content .o-forms {
+	max-width: none;
+}
+.runbooklink {
+	font-size: smaller;
+	text-decoration: none;
+	color: #00c;
+    margin: 0 0.6em;
+	font-weight: bold;
+}
+.runbooklink:hover {
+	text-decoration: underline;
 }
