@@ -1,0 +1,9 @@
+body {
+	margin:0;
+	font-family: Helvetica,arial,sans-serif;
+	font-size: 16px;
+}
+
+#content {
+	padding: 20px 0;
+}

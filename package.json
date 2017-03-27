@@ -1,0 +1,29 @@
+{
+  "name": "system-curriculum",
+  "version": "1.0.0",
+  "description": "Keeping track of the understanding of each of our systems",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Financial-Times/system-curriculum.git"
+  },
+  "keywords": [
+    "systems",
+    "curriculum"
+  ],
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "cmdb.js": "^0.0.1",
+    "express": "^4.13.4",
+    "express-ftwebservice": "^2.2.2",
+    "mustache-express": "^1.2.2",
+    "s3o-middleware": "^1.8.0"
+  },
+  "engines": {
+    "node": "6.9.1"
+  }
+}
