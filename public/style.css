@@ -21,3 +21,7 @@ body {
 .runbooklink:hover {
 	text-decoration: underline;
 }
+.standfirst {
+	font-style: italic;
+	margin-bottom: 2em;
+}

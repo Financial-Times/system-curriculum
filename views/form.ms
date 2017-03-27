@@ -6,6 +6,8 @@
 	<body>
 		{{> _header }}
 		<div id='content' class="o-grid-container">
+			<h1>{{teamname}}</h1>
+			<p class="standfirst">How well do you know each of the following services?</p>
 			<form action="/team/{{teamid}}/form" method="post">
 				{{#systems}}
 				<div class="o-forms">

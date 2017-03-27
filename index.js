@@ -143,6 +143,7 @@ app.get('/team/:teamid/form', (req, res) => {
 		});
 		res.render('form', {
 			title: teamsystems.teamname + " Systems | Update Form",
+			teamname: teamsystems.teamname,
 			teamid: teamsystems.teamid,
 			systems: systems,
 		});
