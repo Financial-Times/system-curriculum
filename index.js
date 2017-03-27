@@ -122,8 +122,34 @@ app.listen(port, () => {
 	console.log('App listening on port '+port);
 });
 
+var teamcache = {};
+
+/**
+ * Gets info about a given team from CMDB
+ * Store it in a local cache to help performance
+ */
+function getTeam(reslocals, teamid) {
+	var fetchTeam = cmdb.getItem(reslocals, 'contact', teamid).then(teamdata => {
+		teamcache[teamid] = teamdata;
+		return teamdata;
+	});
+
+	// If there's already data about the team in the cache, return that and let the fetch update the cache asynchronously
+	if (teamid in teamcache) {
+		return Promise.resolve(teamcache[teamid]);
+	}
+
+	// If it's not in the cache, we need to wait for the response from CMDB
+	return fetchTeam;
+}
+
+/**
+ * Gets info about all the systems owned by a given team
+ * Not cached to ensure we always get the latest
+ * Requests to CMDB happen in parallel.
+ */
 function getTeamSystems(reslocals, teamid) {
-	return cmdb.getItem(reslocals, 'contact', teamid).then(teamdata => {
+	return getTeam(reslocals, teamid).then(teamdata => {
 		var systemFetches = [];
 		teamdata.isSecondaryContactfor.system.forEach(system =>{
 			systemFetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
