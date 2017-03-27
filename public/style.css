@@ -25,3 +25,15 @@ body {
 	font-style: italic;
 	margin-bottom: 2em;
 }
+.knowsAbout {
+	background: #cfc;
+}
+.notLookedAt {
+	background: #fcc;
+}
+.awareOf {
+	background: #fc9;
+}
+.addresponse {
+	float: right;
+}

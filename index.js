@@ -70,6 +70,7 @@ app.use(function(req, res, next) {
   next();
 });
 
+var prefetches = [];
 const levels = [
 	{
 		"label": "In Depth Understanding",
@@ -84,6 +85,12 @@ const levels = [
 		"relationship": "notLookedAt",
 	}
 ];
+levels.forEach(level => {
+	prefetches.push(cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
+		if (!levelRel.reverseID) throw "Can't find reverse relationship for "+level.relationship;
+		level.reverse = levelRel.reverseID;
+	}));
+});
 
 /**
  * Gets a list of systems from the CMDB and renders them
@@ -97,9 +104,47 @@ app.get('/', (req, res) => {
  */
 app.get('/team/:teamid', (req, res) => {
 	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
+		var teammembers = {};
+		var systemList = [];
+		teamsystems.systems.forEach(system => {
+			levels.forEach(level => {
+				if (!(level.reverse in system) || !('contact' in system[level.reverse])) return;
+				system[level.reverse].contact.forEach(contact => {
+					if (!(contact.dataItemID in teammembers)) {
+						teammembers[contact.dataItemID] = {
+							name: contact.name,
+							systems: {},
+						};
+					}
+					teammembers[contact.dataItemID].systems[system.dataItemID] = level.relationship;
+				});
+			});
+			systemList.push({
+				id: system.dataItemID,
+				name: system.name || system.dataItemID,
+			});
+		});
+		systemList.forEach(system => {
+			system.members = [];
+			for (var id in teammembers) {
+				system.members.push({
+					id: id,
+					level: teammembers[id].systems[system.id],
+				});
+			}
+		});
+		var memberList = [];
+		for (var id in teammembers) {
+			memberList.push({
+				name: teammembers[id].name || id,
+				id: id,
+			});
+		}
 		res.render('teamoverview', {
 			title: teamsystems.teamname + " Systems",
 			teamid: teamsystems.teamid,
+			systems: systemList,
+			members: memberList,
 		});
 	}).catch(error => {
 		res.status(502);
@@ -188,8 +233,12 @@ app.use((err, req, res) => {
 	}
 });
 
-app.listen(port, () => {
-	console.log('App listening on port '+port);
+Promise.all(prefetches).catch(error => {
+	console.error(error);
+}).then(() => {
+	app.listen(port, () => {
+		console.log('App listening on port '+port);
+	});
 });
 
 var teamcache = {};
