@@ -75,16 +75,24 @@ const levels = [
 	{
 		"label": "In Depth Understanding",
 		"relationship": "knowsAbout",
+		"value": 3,
 	},
 	{
 		"label": "Aware of how it works",
 		"relationship": "awareOf",
+		"value": 2,
 	},
 	{
 		"label": "Not looked at it",
 		"relationship": "notLookedAt",
+		"value": 1,
 	}
 ];
+const unknownLevel = {
+	"label": "Unknown",
+	"relationship": "unknown",
+	"value": 0,
+}
 levels.forEach(level => {
 	prefetches.push(cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
 		if (!levelRel.reverseID) throw "Can't find reverse relationship for "+level.relationship;
@@ -113,25 +121,16 @@ app.get('/team/:teamid', (req, res) => {
 					if (!(contact.dataItemID in teammembers)) {
 						teammembers[contact.dataItemID] = {
 							name: contact.name,
-							systems: {},
+							systemlevels: {},
 						};
 					}
-					teammembers[contact.dataItemID].systems[system.dataItemID] = level.relationship;
+					teammembers[contact.dataItemID].systemlevels[system.dataItemID] = level;
 				});
 			});
 			systemList.push({
 				id: system.dataItemID,
 				name: system.name || system.dataItemID,
 			});
-		});
-		systemList.forEach(system => {
-			system.members = [];
-			for (var id in teammembers) {
-				system.members.push({
-					id: id,
-					level: teammembers[id].systems[system.id],
-				});
-			}
 		});
 		var memberList = [];
 		for (var id in teammembers) {
@@ -140,6 +139,37 @@ app.get('/team/:teamid', (req, res) => {
 				id: id,
 			});
 		}
+		systemList.forEach(system => {
+			system.members = [];
+			let totalvalue = 0;
+			let valuecount = 0;
+			for (var id in teammembers) {
+				let level = teammembers[id].systemlevels[system.id] || unknownLevel;
+				
+				// Only count in the average if a level has been set
+				if (level.value) {
+					totalvalue += level.value;
+					valuecount++;
+				}
+				system.members.push({
+					id: id,
+					level: level.relationship,
+				});
+			}
+			if (valuecount) {
+				system.avglevel = (totalvalue / valuecount).toFixed(2);
+				if (system.avglevel >= 2) {
+					system.avgclass = "good";
+				} else if (system.avglevel >= 1.5) {
+					system.avgclass = "medium";
+				} else {
+					system.avgclass = "poor";
+				}
+			} else {
+				system.avglevel = "unknown";
+				system.avgclass = "unknown";
+			}
+		});
 		res.render('teamoverview', {
 			title: teamsystems.teamname + " Systems",
 			teamname: teamsystems.teamname,

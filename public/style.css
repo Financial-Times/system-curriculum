@@ -25,15 +25,24 @@ body {
 	font-style: italic;
 	margin-bottom: 2em;
 }
-.knowsAbout {
+.knowsAbout, .good {
 	background: #cfc;
 }
-.notLookedAt {
+.awareOf, .medium {
+	background: #fc9;
+}
+.notLookedAt, .poor {
 	background: #fcc;
 }
-.awareOf {
-	background: #fc9;
+.unknown {
+	background: #ccc;
 }
 .addresponse {
 	float: right;
+}
+.average {
+	border-left: solid;
+}
+.system {
+	border-right: solid;
 }
