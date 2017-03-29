@@ -143,6 +143,7 @@ app.get('/team/:teamid', (req, res) => {
 			system.members = [];
 			let totalvalue = 0;
 			let valuecount = 0;
+			let indepths = 0;
 			for (var id in teammembers) {
 				let level = teammembers[id].systemlevels[system.id] || unknownLevel;
 				
@@ -151,11 +152,15 @@ app.get('/team/:teamid', (req, res) => {
 					totalvalue += level.value;
 					valuecount++;
 				}
+				if (level.relationship == "knowsAbout") indepths++;
 				system.members.push({
 					id: id,
 					level: level.relationship,
+					levellabel: level.label,
 				});
 			}
+
+			/** Data for aveage score column **/
 			if (valuecount) {
 				system.avglevel = (totalvalue / valuecount).toFixed(2);
 				if (system.avglevel >= 2) {
@@ -169,6 +174,18 @@ app.get('/team/:teamid', (req, res) => {
 				system.avglevel = "unknown";
 				system.avgclass = "unknown";
 			}
+
+			/** Data regarding column for number of members with In Depth relationship **/
+			system.indepths = indepths;
+			let indepthspercent = (indepths / memberList.length) * 100;
+			if (indepthspercent >= 60) {
+				system.indepthclass = "good";
+			} else if (indepthspercent >= 40) {
+				system.indepthclass = "medium";
+			} else {
+				system.indepthclass = "poor";
+			}
+			system.indepthspercent = indepthspercent.toFixed();
 		});
 		res.render('teamoverview', {
 			title: teamsystems.teamname + " Systems",

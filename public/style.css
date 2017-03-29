@@ -39,8 +39,9 @@ body {
 }
 .addresponse {
 	float: right;
+	margin-bottom: 1.5em;
 }
-.average {
+.average, .indepth {
 	border-left: solid;
 }
 .system {
