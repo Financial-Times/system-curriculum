@@ -42,23 +42,46 @@ ftwebservice(app, {
 
 	// Check that track can talk to CMDB
 	healthCheck: function() {
-		return cmdb.getItem(null, 'system', 'system-registry').then(result => {
+		var healthchecks = [];
+		healthchecks.push(cmdb.getItem(null, 'system', 'system-registry').then(result => {
 			return false;
 		}).catch(error => {
 			return error.message;
 		}).then(output => {
-			 return [{
+			 return {
 				id: 'cmdb-connection',
 				name: "Connectivity to CMDB",
 				ok: !output,
 				severity: 1,
-				businessImpact: "Can't manage system information through the UI",
+				businessImpact: "Can't manage view or update curriculum data",
 				technicalSummary: "App can't connect make a GET request to CMDB",
 				panicGuide: "Check for alerts related to cmdb.ft.com.	Check connectivity to cmdb.ft.com",
 				checkOutput: output,
 				lastUpdated: new Date().toISOString(),
-			}];
+			};
+		}));
+		levels.forEach(level => {
+			var output = {
+				id: `reverse-${level.relationship}`,
+				name: `Reverse for relationship type '${level.relationship}'`,
+				severity: 1,
+				businessImpact: "Can't view curriculum dashboards",
+				technicalSummary: `No reverseID found for relationship ${level.relationship} CMDB v2`,
+				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/relationshiptypes/${level.relationship}'.  Ensure the 'reverseID' field of the relationship is populated` ,
+				checkOutput: output,
+				lastUpdated: new Date().toISOString(),
+			};
+			healthchecks.push(getLevelReverse(level).then(reverseID => {
+				output.ok = true;
+				output.checkOutput = reverseID;
+				return output;
+			}).catch(error => {
+				output.ok = false;
+				output.checkOutput = error.message || error;
+				return output;
+			}));
 		});
+		return Promise.all(healthchecks);
 	}
 });
 
@@ -94,11 +117,16 @@ const unknownLevel = {
 	"value": 0,
 }
 levels.forEach(level => {
-	prefetches.push(cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
-		if (!levelRel.reverseID) throw "Can't find reverse relationship for "+level.relationship;
-		level.reverse = levelRel.reverseID;
-	}));
+	prefetches.push(getLevelReverse(level));
 });
+
+function getLevelReverse (level) {
+	return cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
+		if (!levelRel.reverseID) throw `Can't find reverse relationship for '${level.relationship}'`;
+		level.reverse = levelRel.reverseID;
+		return level.reverse;
+	});
+}
 
 /**
  * Gets a list of systems from the CMDB and renders them
