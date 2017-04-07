@@ -345,7 +345,7 @@ app.post('/team/:teamid/form', (req, res) => {
 		});
 		return fetches;
 	}).then(() => {
-		res.redirect(303, req.path);
+		res.redirect(303, `/team/${req.params.teamid}`);
 	});
 });
 

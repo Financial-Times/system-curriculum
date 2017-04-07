@@ -6,6 +6,7 @@
 	<body>
 		{{> _header }}
 		<div id='content' class="o-grid-container">
+			A tool for keeping track of how much people feel they know about our systems.
 			<h2>Supported Teams</h2>
 			<small>This tool has been written by the content programme to keep track of systems run by our teams.</small>
 			<ul>

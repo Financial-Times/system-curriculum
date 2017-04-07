@@ -8,7 +8,7 @@
 		<div id='content' class="o-grid-container">
 
 			<h1>{{teamname}}</h1>
-			<a href="/team/{{teamid}}/form" class='addresponse'><button class="o-buttons o-buttons--standout o-buttons--big">Add Response</button></a>
+			<a href="/team/{{teamid}}/form" class='addresponse'><button class="o-buttons o-buttons--standout o-buttons--big">Add / Change Response</button></a>
 			<table class="o-table o-table--responsive-overflow o-table--row-stripes" data-o-component="o-table">
 				<thead>
 					<th class="system" title="Name of System as appears in CMDB">System</th>
