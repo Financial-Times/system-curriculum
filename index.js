@@ -65,7 +65,7 @@ ftwebservice(app, {
 				id: `reverse-${level.relationship}`,
 				name: `Reverse for relationship type '${level.relationship}'`,
 				severity: 1,
-				businessImpact: "Can't view curriculum dashboards",
+				businessImpact: `Can't view curriculum dashboards`,
 				technicalSummary: `No reverseID found for relationship ${level.relationship} CMDB v2`,
 				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/relationshiptypes/${level.relationship}'.  Ensure the 'reverseID' field of the relationship is populated` ,
 				checkOutput: output,
@@ -81,6 +81,28 @@ ftwebservice(app, {
 				return output;
 			}));
 		});
+		supportedTeamIDs.forEach(teamid => {
+			var output = {
+				id: `team-${teamid}`,
+				name: `Check for team '${teamid}'`,
+				severity: 1,
+				businessImpact: `Can't view or update curriculum for team '${teamid}'`,
+				technicalSummary: `No contact with id '${teamid}' found in CMDB v2`,
+				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/items/contact/${teamid}'.  Ensure the 'name' field of the item is populated` ,
+				checkOutput: output,
+				lastUpdated: new Date().toISOString(),
+			};
+			healthchecks.push(getTeam({}, teamid, true).then(teamdata => {
+				if (!teamdata.name) throw `Name not found for '${teamid}'`;
+				output.ok = true;
+				output.checkOutput = teamdata.name;
+				return output;
+			}).catch(error => {
+				output.ok = false;
+				output.checkOutput = error.message || error;
+				return output;
+			}));
+		})
 		return Promise.all(healthchecks);
 	}
 });
@@ -120,6 +142,15 @@ levels.forEach(level => {
 	prefetches.push(getLevelReverse(level));
 });
 
+/**
+ * Should work for all teams in CMDB, but we'll monitor these ones an put them on the index page
+ */
+const supportedTeamIDs = [
+	"contentplatformsupport",
+	"livepublishing",
+	"testteam",
+]
+
 function getLevelReverse (level) {
 	return cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
 		if (!levelRel.reverseID) throw `Can't find reverse relationship for '${level.relationship}'`;
@@ -127,6 +158,7 @@ function getLevelReverse (level) {
 		return level.reverse;
 	});
 }
+
 
 /**
  * Gets a list of systems from the CMDB and renders them
@@ -323,14 +355,14 @@ var teamcache = {};
  * Gets info about a given team from CMDB
  * Store it in a local cache to help performance
  */
-function getTeam(reslocals, teamid) {
+function getTeam(reslocals, teamid, bypassCache) {
 	var fetchTeam = cmdb.getItem(reslocals, 'contact', teamid).then(teamdata => {
 		teamcache[teamid] = teamdata;
 		return teamdata;
 	});
 
 	// If there's already data about the team in the cache, return that and let the fetch update the cache asynchronously
-	if (teamid in teamcache) {
+	if (!bypassCache && teamid in teamcache) {
 		return Promise.resolve(teamcache[teamid]);
 	}
 
