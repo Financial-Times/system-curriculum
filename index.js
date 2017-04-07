@@ -148,7 +148,6 @@ levels.forEach(level => {
 const supportedTeamIDs = [
 	"contentplatformsupport",
 	"livepublishing",
-	"testteam",
 ]
 
 function getLevelReverse (level) {
@@ -163,8 +162,31 @@ function getLevelReverse (level) {
 /**
  * Gets a list of systems from the CMDB and renders them
  */
-app.get('/', (req, res) => {
-	res.render('index', {});
+app.get('/', (req, res, next) => {
+	var getTeams = [];
+	supportedTeamIDs.forEach(teamid => {
+		getTeams.push(getTeam(res.locals, teamid).catch(error => {
+			console.error(teamid, error);
+			return null;
+		}));
+	});
+	Promise.all(getTeams).then(teams => {
+
+		// Filter out teams not in CMDB
+		teams = teams.filter(team => {
+			return !!team;
+		});
+		res.render('index', {
+			teams: teams
+		});
+	}).catch(error => {
+		next(error);
+	});
+});
+
+app.get('/unknownteam', (req, res) => {
+	if (req.query.teamid) res.redirect(303, `/team/${req.query.teamid}`);
+	else res.redirect(303, '/');
 });
 
 /**
