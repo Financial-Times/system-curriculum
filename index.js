@@ -200,6 +200,9 @@ app.get('/team/:teamid', (req, res) => {
 			levels.forEach(level => {
 				if (!(level.reverse in system) || !('contact' in system[level.reverse])) return;
 				system[level.reverse].contact.forEach(contact => {
+
+					// Ignore people who have left
+					if (contact.status && contact.status.toLowerCase() == "inactive") return;
 					if (!(contact.dataItemID in teammembers)) {
 						teammembers[contact.dataItemID] = {
 							name: contact.name,
