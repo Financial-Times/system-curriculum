@@ -197,6 +197,9 @@ app.get('/team/:teamid', (req, res) => {
 		var teammembers = {};
 		var systemList = [];
 		teamsystems.systems.forEach(system => {
+
+			// Ignore decommed systems
+			if (system.lifecycleStage && system.lifecycleStage.toLowerCase() == "retired") return;
 			levels.forEach(level => {
 				if (!(level.reverse in system) || !('contact' in system[level.reverse])) return;
 				system[level.reverse].contact.forEach(contact => {
