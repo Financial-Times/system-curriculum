@@ -9,4 +9,20 @@
 			<a class="o-header-services__related-content-link" href="/docs">Documentation</a>
 		</div>
 	</div>
+	<div class="o-header-services__primary-nav">
+		<div class="o-header-services__container">
+			<ul class="o-header-services__nav-list">
+				{{#supportedteams}}<li class="o-header-services__nav-item">
+					<a class="o-header-services__nav-link{{#selected}} o-header-services__nav-link--selected{{/selected}}" href="/team/{{dataItemID}}">
+						{{name}}{{^name}}{{dataItemID}}{{/name}}
+					</a>
+				</li>{{/supportedteams}}
+				<li class="o-header-services__nav-item">
+					<a class="o-header-services__nav-link{{#otherteamsselected}} o-header-services__nav-link--selected{{/otherteamsselected}}" href="/otherteams">
+						Other Teams
+					</a>
+				</li>
+			</ul>
+		</div>
+	</div>
 </header>

@@ -10,7 +10,7 @@
 			<h2>Supported Teams</h2>
 			<small>This tool has been written by the content programme to keep track of systems run by our teams.</small>
 			<ul>
-				{{#teams}}<li><a href="/team/{{dataItemID}}">{{name}}{{^name}}{{dataItemID}}{{/name}}</a></li>{{/teams}}
+				{{#supportedteams}}<li><a href="/team/{{dataItemID}}">{{name}}{{^name}}{{dataItemID}}{{/name}}</a></li>{{/supportedteams}}
 			</ul>
 			<p><a href="/otherteams">Not listed?  Other teams can add enter their ID here.</a></p>
 		</div>

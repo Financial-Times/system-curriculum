@@ -160,6 +160,29 @@ function getLevelReverse (level) {
 
 
 /**
+ * Gets a list of systems from the CMDB for the nav
+ */
+app.use((req, res, next) => {
+	var getTeams = [];
+	supportedTeamIDs.forEach(teamid => {
+		getTeams.push(getTeam(res.locals, teamid).catch(error => {
+			console.error(teamid, error);
+			return null;
+		}));
+	});
+	Promise.all(getTeams).then(teams => {
+
+		// Filter out teams not in CMDB
+		res.locals.supportedteams = teams.filter(team => {
+			return !!team;
+		});
+		next();
+	}).catch(error => {
+		next(error);
+	});
+});
+
+/**
  * Gets a list of systems from the CMDB and renders them
  */
 app.get('/', (req, res, next) => {
@@ -177,7 +200,7 @@ app.get('/', (req, res, next) => {
 			return !!team;
 		});
 		res.render('index', {
-			teams: teams
+			supportedteams: res.locals.supportedteams,
 		});
 	}).catch(error => {
 		next(error);
@@ -186,16 +209,28 @@ app.get('/', (req, res, next) => {
 
 app.get('/otherteams', (req, res) => {
 	if (req.query.teamid) res.redirect(303, `/team/${req.query.teamid}`);
-	else res.render('otherteams', {});
+	else res.render('otherteams', {
+		supportedteams: res.locals.supportedteams,
+		otherteamsselected: true,
+	});
 });
 app.get('/docs', (req, res) => {
-	res.render('docs');
+	res.render('docs', {
+		supportedteams: res.locals.supportedteams,
+	});
 });
 
 /**
  * Gets a list of systems from the CMDB and renders them
  */
 app.get('/team/:teamid', (req, res) => {
+	var teaminnav = false;
+	res.locals.supportedteams.forEach(team => {
+		if (team.dataItemID == req.params.teamid) {
+			team.selected = true;
+			teaminnav = true;
+		}
+	});
 	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
 		var teammembers = {};
 		var systemList = [];
@@ -291,6 +326,8 @@ app.get('/team/:teamid', (req, res) => {
 			teamid: teamsystems.teamid,
 			systems: systemList,
 			members: memberList,
+			supportedteams: res.locals.supportedteams,
+			otherteamsselected: !teaminnav,
 		});
 	}).catch(error => {
 		res.status(502);
@@ -299,6 +336,13 @@ app.get('/team/:teamid', (req, res) => {
 });
 
 app.get('/team/:teamid/form', (req, res) => {
+	var teaminnav = false;
+	res.locals.supportedteams.forEach(team => {
+		if (team.dataItemID == req.params.teamid) {
+			team.selected = true;
+			teaminnav = true;
+		}
+	});
 	var fetches = [];
 	fetches.push(getTeamSystems(res.locals, req.params.teamid));
 	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
@@ -337,6 +381,8 @@ app.get('/team/:teamid/form', (req, res) => {
 			teamname: teamsystems.teamname,
 			teamid: teamsystems.teamid,
 			systems: systems,
+			supportedteams: res.locals.supportedteams,
+			otherteamsselected: !teaminnav,
 		});
 	}).catch(error => {
 		res.status(502);
