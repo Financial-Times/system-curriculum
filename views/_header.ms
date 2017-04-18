@@ -1,11 +1,12 @@
 <header class='o-header-services' data-o-component='o-header-services'>
 	<div class='o-header-services__top o-header-services__container'>
-		<div class='o-grid-row'>
-			<a href="/" class='o-header-services__ftlogo'></a>
-			<div class='o-header-services__title'>
-				<h1 class='o-header-services__product-name'>System Curriculum</h1>
-				<span class='o-header-subrand__product-tagline'>What do we know?</span>
-			</div>
+		<a href="/" class='o-header-services__ftlogo'></a>
+		<div class='o-header-services__title'>
+			<h1 class='o-header-services__product-name'>System Curriculum</h1>
+			<span class='o-header-subrand__product-tagline'>What do we know?</span>
+		</div>
+		<div class="o-header-services__related-content">
+			<a class="o-header-services__related-content-link" href="/docs">Documentation</a>
 		</div>
 	</div>
 </header>

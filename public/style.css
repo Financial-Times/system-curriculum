@@ -2,11 +2,11 @@ body {
 	margin:0;
 	font-family: Helvetica,arial,sans-serif;
 	font-size: 16px;
+	background-color:#fff1e0;
 }
 
 #content {
 	padding: 1em;
-	background-color:#fff1e0;
 }
 #content .o-forms {
 	max-width: none;

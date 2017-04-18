@@ -184,9 +184,12 @@ app.get('/', (req, res, next) => {
 	});
 });
 
-app.get('/unknownteam', (req, res) => {
+app.get('/otherteams', (req, res) => {
 	if (req.query.teamid) res.redirect(303, `/team/${req.query.teamid}`);
-	else res.redirect(303, '/');
+	else res.render('otherteams', {});
+});
+app.get('/docs', (req, res) => {
+	res.render('docs');
 });
 
 /**

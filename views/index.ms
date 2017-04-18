@@ -12,18 +12,7 @@
 			<ul>
 				{{#teams}}<li><a href="/team/{{dataItemID}}">{{name}}{{^name}}{{dataItemID}}{{/name}}</a></li>{{/teams}}
 			</ul>
-			<h2>Unsupported Teams</h2>
-			<small>The tool should also work for other teams whose systems are in CMDB.  However, we don't test or monitor it for those teams.  If you are interested using the tool for your team and don't want it to sporadically break, please find a central team to support it.  We'll happily hand it over to them.</small>
-			<br/><br/>
-			<form action="/unknownteam" method="get">
-				<div class="o-forms">
-					<label for="unknownteam" class="o-forms__label">CMDB Contact ID for team</label>
-					<input type="text" name="teamid" class="o-forms__text" id="unknownteam" placeholder="eg contentplatformsupport" />
-				</div>
-				<input type="submit" class="o-buttons o-buttons--standout o-buttons--big" value="Go" />
-			</form>
-
-
+			<p><a href="/otherteams">Not listed?  Other teams can add enter their ID here.</a></p>
 		</div>
 		{{> _footer}}
 	</body>
