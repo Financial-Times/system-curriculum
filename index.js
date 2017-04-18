@@ -222,9 +222,16 @@ app.get('/team/:teamid', (req, res) => {
 		});
 		var memberList = [];
 		for (var id in teammembers) {
+			let lastUpdated;
+			if (id in teamsystems.updateTimes) {
+				lastUpdate = teamsystems.updateTimes[id].toLocaleString();
+			} else {
+				lastUpdate = "Uknown";
+			}
 			memberList.push({
 				name: teammembers[id].name || id,
 				id: id,
+				lastUpdate: lastUpdate,
 			});
 		}
 		systemList.forEach(system => {
@@ -405,15 +412,38 @@ function getTeam(reslocals, teamid, bypassCache) {
  */
 function getTeamSystems(reslocals, teamid) {
 	return getTeam(reslocals, teamid).then(teamdata => {
-		var systemFetches = [];
-		teamdata.isSecondaryContactfor.system.forEach(system =>{
-			systemFetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
+		var systems = [];
+		var updateTimes = {};
+		teamdata.isSecondaryContactfor.system.forEach(system => {
+			var fetches = [];
+			fetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
+			levels.forEach(level => {
+				fetches.push(cmdb._fetch(reslocals, `/relationships?relationshipType=${level.relationship}&objectType=system&objectID=${system.dataItemID}&subjectType=contact`).catch(() => []));
+			});
+			systems.push(Promise.all(fetches).then(results => {
+				var system = results.shift();
+				system.rels = {};
+				results.forEach(result => {
+					result.forEach(relationship => {
+						var lastUpdate = new Date(relationship.lastUpdate);
+						if (relationship.subjectID in updateTimes) {
+							if (lastUpdate > updateTimes[relationship.subjectID]) {
+								updateTimes[relationship.subjectID] = lastUpdate;
+							}
+						} else {
+							updateTimes[relationship.subjectID] = lastUpdate;
+						}
+					});
+				});
+				return system;
+			}));
 		});
-		return Promise.all(systemFetches).then(systems => {
+		return Promise.all(systems).then(systems => {
 			return {
 				teamid: teamid,
 				teamname: teamdata.name,
 				systems: systems,
+				updateTimes: updateTimes,
 			}
 		});
 	})

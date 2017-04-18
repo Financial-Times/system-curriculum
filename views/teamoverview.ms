@@ -26,6 +26,12 @@
 					</tr>
 				{{/systems}}
 				</tbody>
+				<tfoot>
+					<th class="system lastUpdate" title="The time these details were most recently updated">Last Update</th>
+					{{#members}}<td class="otable__cell--content-secondary">{{lastUpdate}}</td>{{/members}}
+					<td class="average"></td>
+					<td class="indepth"></td>
+				</tfoot>
 			</table>
 		</div>
 		{{> _footer}}

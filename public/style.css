@@ -47,3 +47,9 @@ body {
 .system {
 	border-right: solid;
 }
+thead th, thead td {
+	border-bottom: solid;
+}
+tfoot th, tfoot td {
+	border-top: solid;
+}
