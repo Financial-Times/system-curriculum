@@ -365,8 +365,9 @@ app.get('/team/:teamid/form', (req, res) => {
 				levelprefs[levelpref.objectID] = levelpref.relationshipType;
 			});
 		});
-		var systems = teamsystems.systems;
-		systems.forEach(system => {
+		var systems = [];
+		teamsystems.systems.forEach(system => {
+			if (system.lifecycleStage && system.lifecycleStage.toLowerCase() == "retired") return;
 			system.levels = [];
 			levels.forEach(level => {
 				system.levels.push({
@@ -375,6 +376,7 @@ app.get('/team/:teamid/form', (req, res) => {
 					selected: (levelprefs[system.dataItemID] == level.relationship),
 				});
 			});
+			systems.push(system);
 		});
 		res.render('form', {
 			title: teamsystems.teamname + " Systems | Update Form",
