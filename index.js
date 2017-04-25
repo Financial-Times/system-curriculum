@@ -151,7 +151,7 @@ const supportedTeamIDs = [
 ]
 
 function getLevelReverse (level) {
-	return cmdb._fetch({}, `/relationshiptypes/${level.relationship}`, 'GET').then(levelRel => {
+	return cmdb._fetch({}, `relationshiptypes/${level.relationship}`, null, 'GET').then(levelRel => {
 		if (!levelRel.reverseID) throw `Can't find reverse relationship for '${level.relationship}'`;
 		level.reverse = levelRel.reverseID;
 		return level.reverse;
@@ -348,7 +348,7 @@ app.get('/team/:teamid/form', (req, res) => {
 	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
 	levels.forEach(level => {
 		fetches.push(
-			cmdb._fetch(res.locals, `/relationships/contact/${contactid}/${level.relationship}`, 'GET').catch((error) => {
+			cmdb._fetch(res.locals, `relationships/contact/${contactid}/${level.relationship}`, null, 'GET').catch((error) => {
 				
 				// Sometimes CMDB returns a 404 when it means empty list.
 				if (error.message == "Received 404 response from CMDB") return [];
@@ -403,8 +403,8 @@ app.post('/team/:teamid/form', (req, res) => {
 				// If the user has selected this option, add it to CMDB
 				// Otherwise delete it from CMDB
 				var method = (req.body[system.dataItemID] == level.relationship) ? "PUT" : "DELETE";
-				var path = `/relationships/contact/${contactid}/${level.relationship}/system/${system.dataItemID}`;
-				fetches.push(cmdb._fetch(res.locals, path, method));
+				var path = `relationships/contact/${contactid}/${level.relationship}/system/${system.dataItemID}`;
+				fetches.push(cmdb._fetch(res.locals, path, null, method));
 			});
 		});
 		return fetches;
@@ -469,7 +469,7 @@ function getTeamSystems(reslocals, teamid) {
 			var fetches = [];
 			fetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
 			levels.forEach(level => {
-				fetches.push(cmdb._fetch(reslocals, `/relationships?relationshipType=${level.relationship}&objectType=system&objectID=${system.dataItemID}&subjectType=contact`).catch(() => []));
+				fetches.push(cmdb._fetch(reslocals, 'relationships', `relationshipType=${level.relationship}&objectType=system&objectID=${system.dataItemID}&subjectType=contact`).catch(() => []));
 			});
 			systems.push(Promise.all(fetches).then(results => {
 				var system = results.shift();
