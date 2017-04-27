@@ -330,8 +330,10 @@ app.get('/team/:teamid', (req, res) => {
 			otherteamsselected: !teaminnav,
 		});
 	}).catch(error => {
+		var message = `Unable to read team '${req.params.teamid}' from CMDB (${error})`;
+		console.error(message, error);
 		res.status(502);
-		res.render("error", {message: "Unable to read team from CMDB ("+error+")"});
+		res.render("error", {message: message});
 	});
 });
 
@@ -465,6 +467,9 @@ function getTeamSystems(reslocals, teamid) {
 	return getTeam(reslocals, teamid).then(teamdata => {
 		var systems = [];
 		var updateTimes = {};
+		if (!teamdata.isSecondaryContactfor) {
+			teamdata.isSecondaryContactfor = {system: []};
+		}
 		teamdata.isSecondaryContactfor.system.forEach(system => {
 			var fetches = [];
 			fetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
