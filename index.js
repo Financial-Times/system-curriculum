@@ -474,7 +474,10 @@ function getTeamSystems(reslocals, teamid) {
 			var fetches = [];
 			fetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
 			levels.forEach(level => {
-				fetches.push(cmdb._fetch(reslocals, 'relationships', `relationshipType=${level.relationship}&objectType=system&objectID=${system.dataItemID}&subjectType=contact`).catch(() => []));
+				fetches.push(cmdb._fetch(reslocals, 'relationships', `relationshipType_id=${level.relationship}&objectType_id=system&objectID=${system.dataItemID}&subjectType_id=contact`).catch(error => {
+					console.error(error);
+					return[];
+				}));
 			});
 			systems.push(Promise.all(fetches).then(results => {
 				var system = results.shift();
