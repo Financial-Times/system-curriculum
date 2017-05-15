@@ -42,8 +42,12 @@ ftwebservice(app, {
 
 	// Check that track can talk to CMDB
 	healthCheck: function() {
+		// Race every individual check against a promise which errors after 5 seconds
+		var timeout = new Promise(function (resolve, reject) {
+			setTimeout(reject, 5000, "Timed Out after 5 seconds");
+		});
 		var healthchecks = [];
-		healthchecks.push(cmdb.getItem(null, 'system', 'system-registry').then(result => {
+		healthchecks.push(Promise.race([cmdb.getItem(null, 'system', 'system-registry'), timeout]).then(result => {
 			return false;
 		}).catch(error => {
 			return error.message;
@@ -51,13 +55,14 @@ ftwebservice(app, {
 			 return {
 				id: 'cmdb-connection',
 				name: "Connectivity to CMDB",
-				ok: !output,
 				severity: 1,
 				businessImpact: "Can't manage view or update curriculum data",
 				technicalSummary: "App can't connect make a GET request to CMDB",
-				panicGuide: "Check for alerts related to cmdb.ft.com.	Check connectivity to cmdb.ft.com",
-				checkOutput: output,
+				panicGuide: `Check for alerts related to cmdb.ft.com.	Check connectivity to cmdb.ft.com
+If the Check Output is showing timeouts, this likely due to slowness with CMDB - escalate to the team responsible for CMDB. `,
 				lastUpdated: new Date().toISOString(),
+				checkOutput: output,
+				ok: !output,
 			};
 		}));
 		levels.forEach(level => {
@@ -67,17 +72,18 @@ ftwebservice(app, {
 				severity: 1,
 				businessImpact: `Can't view curriculum dashboards`,
 				technicalSummary: `No reverseID found for relationship ${level.relationship} CMDB v2`,
-				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/relationshiptypes/${level.relationship}'.  Ensure the 'reverseID' field of the relationship is populated` ,
-				checkOutput: output,
+				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  
+If the Check Output is showing timeouts, this likely due to slowness with CMDB - escalate to the team responsible for CMDB. 
+Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/relationshiptypes/${level.relationship}'.  Ensure the 'reverseID' field of the relationship is populated` ,
 				lastUpdated: new Date().toISOString(),
 			};
-			healthchecks.push(getLevelReverse(level).then(reverseID => {
-				output.ok = true;
+			healthchecks.push(Promise.race([getLevelReverse(level), timeout]).then(reverseID => {
 				output.checkOutput = reverseID;
+				output.ok = true;
 				return output;
 			}).catch(error => {
-				output.ok = false;
 				output.checkOutput = error.message || error;
+				output.ok = false;
 				return output;
 			}));
 		});
@@ -88,18 +94,19 @@ ftwebservice(app, {
 				severity: 1,
 				businessImpact: `Can't view or update curriculum for team '${teamid}'`,
 				technicalSummary: `No contact with id '${teamid}' found in CMDB v2`,
-				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  Otherwise escalate to engineering team, who should check the API repsonse of CMDB v2 for '/items/contact/${teamid}'.  Ensure the 'name' field of the item is populated` ,
-				checkOutput: output,
+				panicGuide: `If 'Connectivity to CMDB' check is failing, fix that first.  
+If the Check Output is showing timeouts, this likely due to slowness with CMDB - escalate to the team responsible for CMDB. 
+Otherwise escalate to the team responsible for this application, who should check the API repsonse of CMDB v2 for '/items/contact/${teamid}'.  Ensure the 'name' field of the item is populated` ,
 				lastUpdated: new Date().toISOString(),
 			};
-			healthchecks.push(getTeam({}, teamid, true).then(teamdata => {
-				if (!teamdata.name) throw `Name not found for '${teamid}'`;
+			healthchecks.push(Promise.race([getTeamSystems({}, teamid, true), timeout]).then(teamdata => {
+				if (!teamdata.teamname) throw `Name not found for '${teamid}'`;
+				output.checkOutput = `${teamdata.teamname}: ${teamdata.systems.length} systems`;
 				output.ok = true;
-				output.checkOutput = teamdata.name;
 				return output;
 			}).catch(error => {
-				output.ok = false;
 				output.checkOutput = error.message || error;
+				output.ok = false;
 				return output;
 			}));
 		})
@@ -463,8 +470,8 @@ function getTeam(reslocals, teamid, bypassCache) {
  * Not cached to ensure we always get the latest
  * Requests to CMDB happen in parallel.
  */
-function getTeamSystems(reslocals, teamid) {
-	return getTeam(reslocals, teamid).then(teamdata => {
+function getTeamSystems(reslocals, teamid, bypassCache) {
+	return getTeam(reslocals, teamid, bypassCache).then(teamdata => {
 		var systems = [];
 		var updateTimes = {};
 		if (!teamdata.isSecondaryContactfor) {
