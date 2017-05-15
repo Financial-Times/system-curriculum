@@ -44,7 +44,7 @@ ftwebservice(app, {
 	healthCheck: function() {
 		// Race every individual check against a promise which errors after 5 seconds
 		var timeout = new Promise(function (resolve, reject) {
-			setTimeout(reject, 5000, "Timed Out after 5 seconds");
+			setTimeout(reject, 9000, "Timed Out after 9 seconds");
 		});
 		var healthchecks = [];
 		healthchecks.push(Promise.race([cmdb.getItem(null, 'system', 'system-registry'), timeout]).then(result => {
