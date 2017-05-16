@@ -99,9 +99,9 @@ If the Check Output is showing timeouts, this likely due to slowness with CMDB -
 Otherwise escalate to the team responsible for this application, who should check the API repsonse of CMDB v2 for '/items/contact/${teamid}'.  Ensure the 'name' field of the item is populated` ,
 				lastUpdated: new Date().toISOString(),
 			};
-			healthchecks.push(Promise.race([getTeamSystems({}, teamid, true), timeout]).then(teamdata => {
-				if (!teamdata.teamname) throw `Name not found for '${teamid}'`;
-				output.checkOutput = `${teamdata.teamname}: ${teamdata.systems.length} systems`;
+			healthchecks.push(Promise.race([getTeam({}, teamid, true), timeout]).then(teamdata => {
+				if (!teamdata.name) throw `Name not found for '${teamid}'`;
+				output.checkOutput = `${teamdata.name}`;
 				output.ok = true;
 				return output;
 			}).catch(error => {
