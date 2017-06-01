@@ -240,43 +240,9 @@ app.get('/team/:teamid', (req, res) => {
 		}
 	});
 	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
-		var teammembers = {};
-		var systemList = [];
-		var updateTimes = {};
-		teamsystems.systems.forEach(system => {
-
-			// Ignore decommed systems
-			if (system.lifecycleStage && system.lifecycleStage.toLowerCase() == "retired") return;
-			levels.forEach(level => {
-				if (!(level.reverse in system) || !('contact' in system[level.reverse])) return;
-				system[level.reverse].contact.forEach(contact => {
-
-					// Ignore people who have left
-					if (contact.status && contact.status.toLowerCase() == "inactive") return;
-					if (!(contact.dataItemID in teammembers)) {
-						teammembers[contact.dataItemID] = {
-							name: contact.name,
-							systemlevels: {},
-						};
-					}
-					teammembers[contact.dataItemID].systemlevels[system.dataItemID] = level;
-					if (contact.relLastUpdate) {
-						let lastUpdate = new Date(contact.relLastUpdate);
-						if (contact.dataItemID in updateTimes) {
-							if (lastUpdate > updateTimes[contact.dataItemID]) {
-								updateTimes[contact.dataItemID] = lastUpdate;
-							}
-						} else {
-							updateTimes[contact.dataItemID] = lastUpdate;
-						}
-					}
-				});
-			});
-			systemList.push({
-				id: system.dataItemID,
-				name: system.name || system.dataItemID,
-			});
-		});
+		var teammembers = teamsystems.teammembers;
+		var systemList = teamsystems.systemList;
+		var updateTimes = teamsystems.systemList;
 		var memberList = [];
 		for (var id in teammembers) {
 			let lastUpdated;
@@ -364,40 +330,33 @@ app.get('/team/:teamid/form', (req, res) => {
 			teaminnav = true;
 		}
 	});
-	var fetches = [];
-	fetches.push(getTeamSystems(res.locals, req.params.teamid));
 	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
-	levels.forEach(level => {
-		fetches.push(
-			cmdb._fetch(res.locals, `relationships/contact/${contactid}/${level.relationship}`, null, 'GET').catch((error) => {
-				
-				// Sometimes CMDB returns a 404 when it means empty list.
-				if (error.message == "Received 404 response from CMDB") return [];
-				throw error;
-			})
-		);
-	});
-	Promise.all(fetches).then(results => {
-		var teamsystems = results.shift();
-		var levelprefs = {};
-		results.forEach(resultset => {
-			resultset.forEach(levelpref => {
-				if (levelpref.objectType != "system") return;
-				levelprefs[levelpref.objectID] = levelpref.relationshipType;
-			});
-		});
-		var systems = [];
-		teamsystems.systems.forEach(system => {
-			if (system.lifecycleStage && system.lifecycleStage.toLowerCase() == "retired") return;
-			system.levels = [];
-			levels.forEach(level => {
-				system.levels.push({
+	var systemlevels = {};
+	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
+		if (contactid in teamsystems.teammembers) {
+			systemlevels = teamsystems.teammembers[contactid].systemlevels;
+		} else {
+			systemlevels = {};
+		}
+
+		// Show list of levels for each systems, and include current selected one
+		var systems = teamsystems.systems.map(system => {
+			system.levels = levels.map(level => {
+				let selected = (systemlevels[system.dataItemID] == level);
+				if (selected) system.populated = true;
+				return {
 					label: level.label,
 					relationship: level.relationship,
-					selected: (levelprefs[system.dataItemID] == level.relationship),
-				});
+					selected: selected,
+				};
 			});
-			systems.push(system);
+			return system;
+
+		// Sort the systems, so unpopulated ones come first
+		}).sort((a, b) => {
+			if (a.populated == b.populated) return a.name.localeCompare(b.name);
+			if (a.populated) return 1;
+			return -1;
 		});
 		res.render('form', {
 			title: teamsystems.teamname + " Systems | Update Form",
@@ -493,11 +452,52 @@ function getTeamSystems(reslocals, teamid, bypassCache) {
 			outputfields: 'name,lifecycleStage,'+reverseLevels,
 			relationshipOutputfields: 'name,relLastUpdate,status',
 		}
-		return cmdb._fetch(reslocals, 'items/system', querystring.stringify(fetchparams)).then(systems => {
+		return cmdb._fetch(reslocals, 'items/system', querystring.stringify(fetchparams)).then(systems => {			
+			var teammembers = {};
+			var systemList = [];
+			var updateTimes = {};
+
+			// Ignore decommed systems
+			systems = systems.filter(system => (!system.lifecycleStage || system.lifecycleStage.toLowerCase() != "retired"))
+			systems.forEach(system => {
+				levels.forEach(level => {
+					if (!(level.reverse in system) || !('contact' in system[level.reverse])) return;
+					system[level.reverse].contact.forEach(contact => {
+
+						// Ignore people who have left
+						if (contact.status && contact.status.toLowerCase() == "inactive") return;
+						if (!(contact.dataItemID in teammembers)) {
+							teammembers[contact.dataItemID] = {
+								name: contact.name,
+								systemlevels: {},
+							};
+						}
+						teammembers[contact.dataItemID].systemlevels[system.dataItemID] = level;
+						if (contact.relLastUpdate) {
+							let lastUpdate = new Date(contact.relLastUpdate);
+							if (contact.dataItemID in updateTimes) {
+								if (lastUpdate > updateTimes[contact.dataItemID]) {
+									updateTimes[contact.dataItemID] = lastUpdate;
+								}
+							} else {
+								updateTimes[contact.dataItemID] = lastUpdate;
+							}
+						}
+					});
+				});
+				systemList.push({
+					id: system.dataItemID,
+					name: system.name || system.dataItemID,
+				});
+			});
+
 			return {
 				teamid: teamid,
 				teamname: teamdata.name,
 				systems: systems,
+				teammembers: teammembers,
+				systemList: systemList,
+				updateTimes: updateTimes,
 			}
 		});
 	})
