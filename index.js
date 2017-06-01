@@ -3,6 +3,7 @@ const express = require('express'),
 	mustacheExpress = require('mustache-express'),
 	path = require('path'),
 	CMDB = require( "cmdb.js" ),
+	querystring = require('querystring');
 	ftwebservice = require('express-ftwebservice');
 require('es6-promise').polyfill();
 
@@ -241,6 +242,7 @@ app.get('/team/:teamid', (req, res) => {
 	getTeamSystems(res.locals, req.params.teamid).then(teamsystems => {
 		var teammembers = {};
 		var systemList = [];
+		var updateTimes = {};
 		teamsystems.systems.forEach(system => {
 
 			// Ignore decommed systems
@@ -258,6 +260,16 @@ app.get('/team/:teamid', (req, res) => {
 						};
 					}
 					teammembers[contact.dataItemID].systemlevels[system.dataItemID] = level;
+					if (contact.relLastUpdate) {
+						let lastUpdate = new Date(contact.relLastUpdate);
+						if (contact.dataItemID in updateTimes) {
+							if (lastUpdate > updateTimes[contact.dataItemID]) {
+								updateTimes[contact.dataItemID] = lastUpdate;
+							}
+						} else {
+							updateTimes[contact.dataItemID] = lastUpdate;
+						}
+					}
 				});
 			});
 			systemList.push({
@@ -268,8 +280,8 @@ app.get('/team/:teamid', (req, res) => {
 		var memberList = [];
 		for (var id in teammembers) {
 			let lastUpdated;
-			if (id in teamsystems.updateTimes) {
-				lastUpdate = teamsystems.updateTimes[id].toLocaleString();
+			if (id in updateTimes) {
+				lastUpdate = updateTimes[id].toLocaleString();
 			} else {
 				lastUpdate = "Uknown";
 			}
@@ -404,9 +416,9 @@ app.get('/team/:teamid/form', (req, res) => {
 
 app.post('/team/:teamid/form', (req, res) => {
 	var contactid = res.locals.s3o_username.replace('.', '').toLowerCase();
-	getTeam(res.locals, req.params.teamid).then(teamdata => {
+	getTeamSystems(res.locals, req.params.teamid).then(teamdata => {
 		var fetches = []
-		teamdata.isSecondaryContactfor.system.forEach(system => {
+		teamdata.systems.forEach(system => {
 			levels.forEach(level => {
 
 				// If the user has selected this option, add it to CMDB
@@ -451,7 +463,7 @@ var teamcache = {};
  * Store it in a local cache to help performance
  */
 function getTeam(reslocals, teamid, bypassCache) {
-	var fetchTeam = cmdb.getItem(reslocals, 'contact', teamid).then(teamdata => {
+	var fetchTeam = cmdb._fetch(reslocals, 'items/contact/'+encodeURIComponent(teamid), 'outputfields=name').then(teamdata => {
 		teamcache[teamid] = teamdata;
 		return teamdata;
 	});
@@ -468,48 +480,24 @@ function getTeam(reslocals, teamid, bypassCache) {
 /**
  * Gets info about all the systems owned by a given team
  * Not cached to ensure we always get the latest
- * Requests to CMDB happen in parallel.
  */
 function getTeamSystems(reslocals, teamid, bypassCache) {
 	return getTeam(reslocals, teamid, bypassCache).then(teamdata => {
 		var systems = [];
-		var updateTimes = {};
 		if (!teamdata.isSecondaryContactfor) {
 			teamdata.isSecondaryContactfor = {system: []};
 		}
-		teamdata.isSecondaryContactfor.system.forEach(system => {
-			var fetches = [];
-			fetches.push(cmdb.getItem(reslocals, 'system', system.dataItemID));
-			levels.forEach(level => {
-				fetches.push(cmdb._fetch(reslocals, 'relationships', `relationshipType_id=${level.relationship}&objectType_id=system&objectID=${system.dataItemID}&subjectType_id=contact`).catch(error => {
-					console.error(error);
-					return[];
-				}));
-			});
-			systems.push(Promise.all(fetches).then(results => {
-				var system = results.shift();
-				system.rels = {};
-				results.forEach(result => {
-					result.forEach(relationship => {
-						var lastUpdate = new Date(relationship.lastUpdate);
-						if (relationship.subjectID in updateTimes) {
-							if (lastUpdate > updateTimes[relationship.subjectID]) {
-								updateTimes[relationship.subjectID] = lastUpdate;
-							}
-						} else {
-							updateTimes[relationship.subjectID] = lastUpdate;
-						}
-					});
-				});
-				return system;
-			}));
-		});
-		return Promise.all(systems).then(systems => {
+		var reverseLevels = levels.map(level => level.reverse).join(',');
+		var fetchparams = {
+			'secondaryContact.dataItemID': teamid,
+			outputfields: 'name,lifecycleStage,'+reverseLevels,
+			relationshipOutputfields: 'name,relLastUpdate,status',
+		}
+		return cmdb._fetch(reslocals, 'items/system', querystring.stringify(fetchparams)).then(systems => {
 			return {
 				teamid: teamid,
 				teamname: teamdata.name,
 				systems: systems,
-				updateTimes: updateTimes,
 			}
 		});
 	})
