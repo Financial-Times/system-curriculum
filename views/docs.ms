@@ -24,7 +24,7 @@
 					<li>They are <strong>not</strong> marked with a `status` of "inactive"</li>
 					<li>They have filled in the form for at least one system listed.</li>
 				</ul>
-				Systems are identified internally using their username from s<sub>3</sub>o, minus any periods.  In the UI, they are displayed using their `name` (falls back to the identifier if `name` is missing from CMDB).
+				People are identified internally using their username from s<sub>3</sub>o, minus any periods.  In the UI, they are displayed using their `name` (falls back to the identifier if `name` is missing from CMDB).
 			</p>
 			<h2>What if my team isn't listed on the homepage?</h2>
 			<p>See the <a href="/otherteams">Other Teams Page</a>.</p>
