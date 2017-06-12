@@ -296,9 +296,9 @@ app.get('/team/:teamid', (req, res) => {
 			/** Data regarding column for number of members with In Depth relationship **/
 			system.indepths = indepths;
 			let indepthspercent = (indepths / memberList.length) * 100;
-			if (indepthspercent >= 60) {
+			if (indepths >= 4) {
 				system.indepthclass = "good";
-			} else if (indepthspercent >= 40) {
+			} else if (indepths >= 2) {
 				system.indepthclass = "medium";
 			} else {
 				system.indepthclass = "poor";
