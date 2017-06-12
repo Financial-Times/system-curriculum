@@ -12,9 +12,9 @@
 			<table class="o-table o-table--responsive-overflow o-table--row-stripes" data-o-component="o-table">
 				<thead>
 					<th class="system" title="Name of System as appears in CMDB">System</th>
-					{{#members}}<th><span class="name">{{name}}</span></th>{{/members}}
-					<th title="Average knowledge score for the system (Only counting team members who have given a score)"><span class="name">Average Score</span></th>
-					<th title="Absolute number of members with in depth knowledge of the system.  (Percentages are out of all members listed here, regardless of if they've scored every system)"><span class="name"># In Depth</span></th>
+					{{#members}}<th class="name"><span class="inner">{{name}}</span></th>{{/members}}
+					<th title="Average knowledge score for the system (Only counting team members who have given a score)" class="summarycolumn"><span class="inner">Team Comfort&nbsp;Level</span></th>
+					<th title="Absolute number of members with in depth knowledge of the system.  (Percentages are out of all members listed here, regardless of if they've scored every system)" class="summarycolumn"><span class="inner">Key&nbsp;People Dependencies</span></th>
 				</thead>
 				<tbody>
 				{{#systems}}

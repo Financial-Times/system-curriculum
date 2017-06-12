@@ -42,17 +42,17 @@ body {
 	margin-bottom: 1.5em;
 }
 .average, .indepth {
-	border-left: solid;
+	border-left: solid #000000;
+	border-right: solid #000000;
 }
 .system {
-	border-right: solid;
+	border-right: solid #000000;
 }
 .o-table thead th, .o-table thead td {
-	border-bottom: solid;
-	padding-left: 30px;
+	border-bottom: solid #000000;
 }
 tfoot th, tfoot td {
-	border-top: solid;
+	border-top: solid #000000;
 }
 .o-table td.levelcell {
 	font-size: 11px;
@@ -60,10 +60,18 @@ tfoot th, tfoot td {
     vertical-align: middle;
     padding: 0;
 }
-.name {
+.o-table .name {
+	padding-left: 30px;
+}
+.o-table .name .inner {
 	transform:rotate(-30deg);
 	display: block;
-    width: 0;
-    white-space: nowrap;
     margin-top: 60px;
+    white-space: nowrap;
+    width: 0;
+}
+.o-table .summarycolumn {
+	color: #00757F;
+	text-align: center;
+	font-size: 13px;
 }
