@@ -390,6 +390,9 @@ app.post('/team/:teamid/form', (req, res) => {
 		return fetches;
 	}).then(() => {
 		res.redirect(303, `/team/${req.params.teamid}`);
+	}).catch(error => {
+		res.status(502);
+		res.render("error", {message: "Failed to save some of your answers.  Please try again. ("+error+")"});
 	});
 });
 
