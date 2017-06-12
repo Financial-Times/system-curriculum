@@ -452,7 +452,8 @@ function getTeamSystems(reslocals, teamid, bypassCache) {
 			outputfields: 'name,lifecycleStage,'+reverseLevels,
 			relationshipOutputfields: 'name,relLastUpdate,status',
 		}
-		return cmdb._fetch(reslocals, 'items/system', querystring.stringify(fetchparams)).then(systems => {			
+		var url = cmdb.api + 'items/system?' + querystring.stringify(fetchparams)
+		return cmdb._fetchAll(reslocals, url).then(systems => {			
 			var teammembers = {};
 			var systemList = [];
 			var updateTimes = {};
