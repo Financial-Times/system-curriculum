@@ -133,12 +133,12 @@ const levels = [
 	{
 		"label": "Aware of how it works",
 		"relationship": "awareOf",
-		"value": 2,
+		"value": 1,
 	},
 	{
 		"label": "Not looked at it",
 		"relationship": "notLookedAt",
-		"value": 1,
+		"value": 0,
 	}
 ];
 const unknownLevel = {
@@ -265,11 +265,8 @@ app.get('/team/:teamid', (req, res) => {
 			for (var id in teammembers) {
 				let level = teammembers[id].systemlevels[system.id] || unknownLevel;
 				
-				// Only count in the average if a level has been set
-				if (level.value) {
-					totalvalue += level.value;
-					valuecount++;
-				}
+				totalvalue += level.value;
+				valuecount++;
 				if (level.relationship == "knowsAbout") indepths++;
 				system.members.push({
 					id: id,
@@ -281,9 +278,9 @@ app.get('/team/:teamid', (req, res) => {
 			/** Data for aveage score column **/
 			if (valuecount) {
 				system.avglevel = (totalvalue / valuecount).toFixed(2);
-				if (system.avglevel >= 2) {
+				if (system.avglevel >= 1.5) {
 					system.avgclass = "good";
-				} else if (system.avglevel >= 1.5) {
+				} else if (system.avglevel >= 0.75) {
 					system.avgclass = "medium";
 				} else {
 					system.avgclass = "poor";
