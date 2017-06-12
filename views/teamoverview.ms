@@ -5,22 +5,22 @@
 	</head>
 	<body>
 		{{> _header }}
-		<div id='content' class="o-grid-container">
+		<div id='content'>
 
 			<h1>{{teamname}}</h1>
 			<a href="/team/{{teamid}}/form" class='addresponse'><button class="o-buttons o-buttons--standout o-buttons--big">Add / Change Response</button></a>
 			<table class="o-table o-table--responsive-overflow o-table--row-stripes" data-o-component="o-table">
 				<thead>
 					<th class="system" title="Name of System as appears in CMDB">System</th>
-					{{#members}}<th>{{name}}</th>{{/members}}
-					<th class="average" title="Average knowledge score for the system (Only counting team members who have given a score)">Average Score</th>
-					<th class="indepth" title="Absolute number of members with in depth knowledge of the system.  (Percentages are out of all members listed here, regardless of if they've scored every system)"># In Depth</th>
+					{{#members}}<th><span class="name">{{name}}</span></th>{{/members}}
+					<th title="Average knowledge score for the system (Only counting team members who have given a score)"><span class="name">Average Score</span></th>
+					<th title="Absolute number of members with in depth knowledge of the system.  (Percentages are out of all members listed here, regardless of if they've scored every system)"><span class="name"># In Depth</span></th>
 				</thead>
 				<tbody>
 				{{#systems}}
 					<tr>
 						<td class="system">{{name}}</td>
-						{{#members}}<td class="{{level}}" title="{{levellabel}}">{{level}}</td>{{/members}}
+						{{#members}}<td class="levelcell {{level}}" title="{{levellabel}}">{{level}}</td>{{/members}}
 						<td class="average {{avgclass}} o-table__cell--numeric">{{avglevel}}</td>
 						<td class="indepth {{indepthclass}} o-table__cell--numeric">{{indepths}} {{#indepths}}({{indepthspercent}}%){{/indepths}}</td>
 					</tr>

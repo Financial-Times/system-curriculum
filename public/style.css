@@ -47,9 +47,23 @@ body {
 .system {
 	border-right: solid;
 }
-thead th, thead td {
+.o-table thead th, .o-table thead td {
 	border-bottom: solid;
+	padding-left: 30px;
 }
 tfoot th, tfoot td {
 	border-top: solid;
+}
+.o-table td.levelcell {
+	font-size: 11px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 0;
+}
+.name {
+	transform:rotate(-30deg);
+	display: block;
+    width: 0;
+    white-space: nowrap;
+    margin-top: 60px;
 }
