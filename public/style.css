@@ -51,6 +51,12 @@ body {
 .o-table thead th, .o-table thead td {
 	border-bottom: solid #000000;
 }
+.progtable th:not(:last-child) {
+	border-right: solid #000000;
+}
+.progtable .indepth {
+	border-right: none;
+}
 tfoot th, tfoot td {
 	border-top: solid #000000;
 }
@@ -74,4 +80,7 @@ tfoot th, tfoot td {
 	color: #00757F;
 	text-align: center;
 	font-size: 13px;
+}
+.o-table tbody tr.stripe {
+	background-color: #f2dfce;
 }

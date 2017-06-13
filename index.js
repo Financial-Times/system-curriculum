@@ -144,7 +144,7 @@ const levels = [
 const unknownLevel = {
 	"label": "Unknown",
 	"relationship": "unknown",
-	"value": 0,
+	"value": null,
 }
 levels.forEach(level => {
 	prefetches.push(getLevelReverse(level));
@@ -257,51 +257,7 @@ app.get('/team/:teamid', (req, res) => {
 				lastUpdate: lastUpdate,
 			});
 		}
-		systemList.forEach(system => {
-			system.members = [];
-			let totalvalue = 0;
-			let valuecount = 0;
-			let indepths = 0;
-			for (var id in teammembers) {
-				let level = teammembers[id].systemlevels[system.id] || unknownLevel;
-				
-				totalvalue += level.value;
-				valuecount++;
-				if (level.relationship == "knowsAbout") indepths++;
-				system.members.push({
-					id: id,
-					level: level.relationship,
-					levellabel: level.label,
-				});
-			}
-
-			/** Data for aveage score column **/
-			if (valuecount) {
-				system.avglevel = (totalvalue / valuecount).toFixed(2);
-				if (system.avglevel >= 1.5) {
-					system.avgclass = "good";
-				} else if (system.avglevel >= 0.75) {
-					system.avgclass = "medium";
-				} else {
-					system.avgclass = "poor";
-				}
-			} else {
-				system.avglevel = "unknown";
-				system.avgclass = "unknown";
-			}
-
-			/** Data regarding column for number of members with In Depth relationship **/
-			system.indepths = indepths;
-			let indepthspercent = (indepths / memberList.length) * 100;
-			if (indepths >= 4) {
-				system.indepthclass = "good";
-			} else if (indepths >= 2) {
-				system.indepthclass = "medium";
-			} else {
-				system.indepthclass = "poor";
-			}
-			system.indepthspercent = indepthspercent.toFixed();
-		});
+		calculateSystemKnowledge(systemList, teammembers);
 		res.render('teamoverview', {
 			title: teamsystems.teamname + " Systems",
 			teamname: teamsystems.teamname,
@@ -393,6 +349,57 @@ app.post('/team/:teamid/form', (req, res) => {
 	});
 });
 
+
+/**
+ * Gets a list of systems from the CMDB and renders them
+ */
+app.get('/programme/:programmename', (req, res) => {
+	res.locals.teaminnav = false;
+	res.locals.supportedteams.forEach(team => {
+		if (team.dataItemID == req.params.teamid) {
+			team.selected = true;
+			res.locals.teaminnav = true;
+		}
+	});
+	getTeamSystems(res.locals, req.params.programmename, 'programme', true).then(data => {
+		calculateSystemKnowledge(data.systemList, data.teammembers);
+		data.systemList.sort(function (a, b) {
+			if (a.teamname && !b.teamname) return -1;
+			if (b.teamname && !a.teamname) return 1;
+			if (a.teamname && b.teamname) {
+				if (a.teamname.toLowerCase() > b.teamname.toLowerCase()) return 1
+				if (a.teamname.toLowerCase() < b.teamname.toLowerCase()) return -1;
+			}
+			if (!a.name) a.name = "";
+			if (!b.name) b.name = "";
+			if (a.name.toLowerCase() > b.name.toLowerCase()) return 1
+			if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+			return 0;
+		});
+		var stripe = false;
+		var prevteamname = null;
+		data.systemList.forEach(system => {
+			if (system.teamname != prevteamname) {
+				stripe = !stripe;
+			}
+			system.stripe = stripe;
+			prevteamname = system.teamname;
+		});
+		res.render('programmeoverview', {
+			title: data.teamname + " Programme Summary",
+			programmename: data.teamname,
+			systems: data.systemList,
+			supportedteams: res.locals.supportedteams,
+			otherteamsselected: !res.locals.teaminnav,
+		});
+	}).catch(error => {
+		var message = `Unable to read programme '${req.params.programmename}' from CMDB (${error})`;
+		console.error(message, error);
+		res.status(502);
+		res.render("error", {message: message});
+	});
+});
+
 app.use((req, res) => {
 	res.status(404).render('error', {message:"Page not found."});
 });
@@ -440,20 +447,25 @@ function getTeam(reslocals, teamid, bypassCache) {
  * Gets info about all the systems owned by a given team
  * Not cached to ensure we always get the latest
  */
-function getTeamSystems(reslocals, teamid, bypassCache) {
+function getTeamSystems(reslocals, teamid, relationship, fuzzymatch, bypassCache) {
 	return getTeam(reslocals, teamid, bypassCache).then(teamdata => {
 		var systems = [];
-		if (!teamdata.isSecondaryContactfor) {
-			teamdata.isSecondaryContactfor = {system: []};
-		}
 		var reverseLevels = levels.map(level => level.reverse).join(',');
 		var fetchparams = {
-			'secondaryContact.dataItemID': teamid,
 			outputfields: 'name,lifecycleStage,'+reverseLevels,
 			relationshipOutputfields: 'name,relLastUpdate,status',
 		}
-		var url = cmdb.api + 'items/system?' + querystring.stringify(fetchparams)
-		return cmdb._fetchAll(reslocals, url).then(systems => {			
+		if (!relationship) relationship = 'secondaryContact';
+		if (relationship != 'secondaryContact') {
+			fetchparams.outputfields += ',secondaryContact';
+		}
+		if (fuzzymatch) {
+			fetchparams[relationship+'.dataItemID'] = teamid+'*';
+		} else {
+			fetchparams[relationship+'.dataItemID'] = teamid;
+		}
+		var url = cmdb.api + 'items/system?' + querystring.stringify(fetchparams);
+		return cmdb._fetchAll(reslocals, url).then(systems => {
 			var teammembers = {};
 			var systemList = [];
 			var updateTimes = {};
@@ -486,9 +498,14 @@ function getTeamSystems(reslocals, teamid, bypassCache) {
 						}
 					});
 				});
+				let teamname = null;
+				if (system.secondaryContact && system.secondaryContact.contact.length) {
+					teamname = system.secondaryContact.contact[0].name;
+				}
 				systemList.push({
 					id: system.dataItemID,
 					name: system.name || system.dataItemID,
+					teamname: teamname
 				});
 			});
 
@@ -500,6 +517,59 @@ function getTeamSystems(reslocals, teamid, bypassCache) {
 				systemList: systemList,
 				updateTimes: updateTimes,
 			}
-		});
+		})
 	})
+}
+/**
+ * Takes a list of systems and adds data to regarding team members' knowledge of it
+ *
+ */
+function calculateSystemKnowledge(systemList, teammembers) {
+	systemList.forEach(system => {
+		system.members = [];
+		let totalvalue = 0;
+		let valuecount = 0;
+		let indepths = 0;
+		for (var id in teammembers) {
+			let level = teammembers[id].systemlevels[system.id] || unknownLevel;
+			
+			if (level.value !== null) {
+				totalvalue += level.value;
+				valuecount++;
+			}
+			if (level.relationship == "knowsAbout") indepths++;
+			system.members.push({
+				id: id,
+				level: level.relationship,
+				levellabel: level.label,
+			});
+		}
+
+		/** Data for aveage score column **/
+		if (valuecount) {
+			system.avglevel = (totalvalue / valuecount).toFixed(2);
+			if (system.avglevel >= 1.5) {
+				system.avgclass = "good";
+			} else if (system.avglevel >= 0.75) {
+				system.avgclass = "medium";
+			} else {
+				system.avgclass = "poor";
+			}
+		} else {
+			system.avglevel = "unknown";
+			system.avgclass = "unknown";
+		}
+
+		/** Data regarding column for number of members with In Depth relationship **/
+		system.indepths = indepths;
+		let indepthspercent = (indepths / Object.keys(teammembers).length) * 100;
+		if (system.indepths >= 4) {
+			system.indepthclass = "good";
+		} else if (system.indepths >= 2) {
+			system.indepthclass = "medium";
+		} else {
+			system.indepthclass = "poor";
+		}
+		system.indepthspercent = indepthspercent.toFixed();
+	});
 }
