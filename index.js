@@ -194,24 +194,8 @@ app.use((req, res, next) => {
  * Gets a list of systems from the CMDB and renders them
  */
 app.get('/', (req, res, next) => {
-	var getTeams = [];
-	supportedTeamIDs.forEach(teamid => {
-		getTeams.push(getTeam(res.locals, teamid).catch(error => {
-			console.error(teamid, error);
-			return null;
-		}));
-	});
-	Promise.all(getTeams).then(teams => {
-
-		// Filter out teams not in CMDB
-		teams = teams.filter(team => {
-			return !!team;
-		});
-		res.render('index', {
-			supportedteams: res.locals.supportedteams,
-		});
-	}).catch(error => {
-		next(error);
+	res.render('index', {
+		supportedteams: res.locals.supportedteams,
 	});
 });
 
@@ -354,13 +338,6 @@ app.post('/team/:teamid/form', (req, res) => {
  * Gets a list of systems from the CMDB and renders them
  */
 app.get('/programme/:programmename', (req, res) => {
-	res.locals.teaminnav = false;
-	res.locals.supportedteams.forEach(team => {
-		if (team.dataItemID == req.params.teamid) {
-			team.selected = true;
-			res.locals.teaminnav = true;
-		}
-	});
 	getTeamSystems(res.locals, req.params.programmename, 'programme', true).then(data => {
 		calculateSystemKnowledge(data.systemList, data.teammembers);
 		data.systemList.sort(function (a, b) {
@@ -390,7 +367,7 @@ app.get('/programme/:programmename', (req, res) => {
 			programmename: data.teamname,
 			systems: data.systemList,
 			supportedteams: res.locals.supportedteams,
-			otherteamsselected: !res.locals.teaminnav,
+			programmeselected: true,
 		});
 	}).catch(error => {
 		var message = `Unable to read programme '${req.params.programmename}' from CMDB (${error})`;

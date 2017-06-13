@@ -22,6 +22,11 @@
 						Other Teams
 					</a>
 				</li>
+				<li class="o-header-services__nav-item">
+					<a class="o-header-services__nav-link{{#programmeselected}} o-header-services__nav-link--selected{{/programmeselected}}" href="/programme">
+						Programme Summary
+					</a>
+				</li>
 			</ul>
 		</div>
 	</div>
