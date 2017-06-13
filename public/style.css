@@ -41,7 +41,7 @@ body {
 	float: right;
 	margin-bottom: 1.5em;
 }
-.average, .indepth {
+.average, .indepth, .serviceTier {
 	border-left: solid #000000;
 	border-right: solid #000000;
 }

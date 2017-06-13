@@ -449,7 +449,7 @@ function getTeamSystems(reslocals, teamid, relationship, fuzzymatch, bypassCache
 		var systems = [];
 		var reverseLevels = levels.map(level => level.reverse).join(',');
 		var fetchparams = {
-			outputfields: 'name,lifecycleStage,'+reverseLevels,
+			outputfields: 'name,lifecycleStage,serviceTier,'+reverseLevels,
 			relationshipOutputfields: 'name,relLastUpdate,status',
 		}
 		if (!relationship) relationship = 'secondaryContact';
@@ -502,6 +502,7 @@ function getTeamSystems(reslocals, teamid, relationship, fuzzymatch, bypassCache
 				systemList.push({
 					id: system.dataItemID,
 					name: system.name || system.dataItemID,
+					serviceTier: system.serviceTier,
 					teamname: teamname
 				});
 			});
