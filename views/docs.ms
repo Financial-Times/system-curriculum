@@ -28,7 +28,15 @@
 			</p>
 			<h2>What if my team isn't listed on the homepage?</h2>
 			<p>See the <a href="/otherteams">Other Teams Page</a>.</p>
-
+			<h2>How are programme summary pages generated?</h2>
+			<p>Programmes are listed if:
+				<ul>
+					<li>They appear in the CMDB with a type `contact`</li>
+					<li>They have a `contactType` of "Programme"</li>
+					<li>Programmes whose IDs include a hyphen are grouped together, based the part of the ID before the hyphen.</li>
+				</ul>
+				Programme summaries also list the team each system belongs to (based on the `secondaryContact` relationship).  Note that there is no guarantee that all of a team's systems will appear in the corresponding programme summaries.  This relies on the quality of CMDB data for each system.
+			</p>
 		</div>
 		{{> _footer}}
 	</body>

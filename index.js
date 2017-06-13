@@ -333,9 +333,29 @@ app.post('/team/:teamid/form', (req, res) => {
 	});
 });
 
+/**
+ * List programmes to link to summary pages
+ */
+app.get('/programme', (req, res, next) => {
+	var url = cmdb.api + 'items/contact?outputfields=name&contactType=Programme';
+	return cmdb._fetchAll(res.locals, url).then(programmes => {
+		programmes = programmes.filter(programme => (programme.dataItemID.indexOf('-') == -1));
+		res.render('programmeindex', {
+			title: "Programme Level Summaries",
+			programmes: programmes,
+			supportedteams: res.locals.supportedteams,
+			programmeselected: true,
+		});
+	}).catch(error => {
+		var message = `Unable to read programme list from CMDB (${error})`;
+		console.error(message, error);
+		res.status(502);
+		res.render("error", {message: message});
+	});
+});
 
 /**
- * Gets a list of systems from the CMDB and renders them
+ * Create a high-level summary for each programme
  */
 app.get('/programme/:programmename', (req, res) => {
 	getTeamSystems(res.locals, req.params.programmename, 'programme', true).then(data => {
