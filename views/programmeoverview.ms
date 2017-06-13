@@ -19,7 +19,7 @@
 				<tbody>
 				{{#systems}}
 					<tr{{#stripe}} class="stripe"{{/stripe}}>
-						<td class="system">{{name}} <a href="https://dewey.ft.com/{{id}}.html" class="runbooklink" target="_blank">Runbook</a></td>
+						<td class="system">{{name}} <span class="runbooklink"><a href="https://dewey.ft.com/{{id}}.html" target="_blank">Runbook</a> | <a href="https://systemregistry.in.ft.com/manage/{{id}}" target="_blank">Edit</a></span></td>
 						<td class="">{{teamname}}</td>
 						<td class="serviceTier">{{serviceTier}}</td>
 						<td class="average {{avgclass}} o-table__cell--numeric">{{avglevel}}</td>
