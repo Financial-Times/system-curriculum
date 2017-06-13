@@ -375,17 +375,27 @@ app.get('/programme/:programmename', (req, res) => {
 		});
 		var stripe = false;
 		var prevteamname = null;
+		var teamnames = {};
 		data.systemList.forEach(system => {
 			if (system.teamname != prevteamname) {
 				stripe = !stripe;
 			}
 			system.stripe = stripe;
 			prevteamname = system.teamname;
+			if (system.teamid) teamnames[system.teamid] = system.teamname;
 		});
+		var teamid, teamList = [];
+		for (teamid in teamnames) {
+			teamList.push({
+				id: teamid,
+				name: teamnames[teamid],
+			});
+		}
 		res.render('programmeoverview', {
 			title: data.teamname + " Programme Summary",
 			programmename: data.teamname,
 			systems: data.systemList,
+			teams: teamList,
 			supportedteams: res.locals.supportedteams,
 			programmeselected: true,
 		});
@@ -496,14 +506,17 @@ function getTeamSystems(reslocals, teamid, relationship, fuzzymatch, bypassCache
 					});
 				});
 				let teamname = null;
+				let teamid = null;
 				if (system.secondaryContact && system.secondaryContact.contact.length) {
 					teamname = system.secondaryContact.contact[0].name;
+					teamid = system.secondaryContact.contact[0].dataItemID;
 				}
 				systemList.push({
 					id: system.dataItemID,
 					name: system.name || system.dataItemID,
 					serviceTier: system.serviceTier,
-					teamname: teamname
+					teamname: teamname,
+					teamid: teamid,
 				});
 			});
 

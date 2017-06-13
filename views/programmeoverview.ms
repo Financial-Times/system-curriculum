@@ -28,6 +28,14 @@
 				{{/systems}}
 				</tbody>
 			</table>
+			<div>
+				<h2>Team Reports</h2>
+			<ul>
+				{{#teams}}
+				<li><a href="/team/{{id}}">{{name}}</a></li>
+				{{/teams}}
+			</ul>
+			</div>
 		</div>
 		{{> _footer}}
 	</body>
