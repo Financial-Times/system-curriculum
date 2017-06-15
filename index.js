@@ -147,7 +147,9 @@ const unknownLevel = {
 	"value": null,
 }
 levels.forEach(level => {
-	prefetches.push(getLevelReverse(level));
+	prefetches.push(getLevelReverse(level).catch(error => {
+		console.error(`Can't lookup reverse for relationship ${level.relationship}`, error);
+	}));
 });
 
 /**
@@ -366,6 +368,12 @@ app.get('/programme/:programmename', (req, res) => {
 			if (a.teamname && b.teamname) {
 				if (a.teamname.toLowerCase() > b.teamname.toLowerCase()) return 1
 				if (a.teamname.toLowerCase() < b.teamname.toLowerCase()) return -1;
+
+				// Sometimes 2 teams have the same name, so group by teamid too
+				if (a.teamid && b.teamid) {
+					if (a.teamid > b.teamid) return 1;
+					if (a.teamid < b.teamid) return -1;
+				}
 			}
 			if (!a.name) a.name = "";
 			if (!b.name) b.name = "";
@@ -374,14 +382,14 @@ app.get('/programme/:programmename', (req, res) => {
 			return 0;
 		});
 		var stripe = false;
-		var prevteamname = null;
+		var prevteamid = null;
 		var teamnames = {};
 		data.systemList.forEach(system => {
-			if (system.teamname != prevteamname) {
+			if (system.teamid != prevteamid) {
 				stripe = !stripe;
 			}
 			system.stripe = stripe;
-			prevteamname = system.teamname;
+			prevteamid = system.teamid;
 			if (system.teamid) teamnames[system.teamid] = system.teamname;
 		});
 		var teamid, teamList = [];
